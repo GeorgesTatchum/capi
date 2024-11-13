@@ -25,8 +25,8 @@ L'objectif de cette application est de permettre à des joueurs de participer à
 1. Cloner le dépôt :
 
    ```bash
-   git clone https://github.com/votre-utilisateur/planning-poker.git
-   cd planning-poker/backend
+   git clone https://github.com/GeorgesTatchum/capi.git
+   cd capi/backend
    ```
 
 2. Installer les dépendances :
