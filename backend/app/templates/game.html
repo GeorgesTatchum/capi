@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Game</h2>
+<div id="backlog">
+    {% for task in backlog %}
+    <div>
+        <p>Task: {{ task.name }}, Estimate: {{ task.estimate }}</p>
+    </div>
+    {% endfor %}
+</div>
+<div id="vote">
+    <h3>Votez pour la tâche actuelle</h3>
+    <div id="latency-timer">10</div>
+    <div id="timer" style="display:none;">30</div>
+    <div id="choices">
+        <img src="/static/cartes/cartes_0.svg" alt="0" onclick="selectVote(0)" disabled>
+        <img src="/static/cartes/cartes_1.svg" alt="1" onclick="selectVote(1)" disabled>
+        <img src="/static/cartes/cartes_2.svg" alt="2" onclick="selectVote(2)" disabled>
+        <img src="/static/cartes/cartes_3.svg" alt="3" onclick="selectVote(3)" disabled>
+        <img src="/static/cartes/cartes_5.svg" alt="5" onclick="selectVote(5)" disabled>
+        <img src="/static/cartes/cartes_8.svg" alt="8" onclick="selectVote(8)" disabled>
+        <img src="/static/cartes/cartes_13.svg" alt="13" onclick="selectVote(13)" disabled>
+        <img src="/static/cartes/cartes_20.svg" alt="20" onclick="selectVote(20)" disabled>
+        <img src="/static/cartes/cartes_40.svg" alt="40" onclick="selectVote(40)" disabled>
+        <img src="/static/cartes/cartes_100.svg" alt="100" onclick="selectVote(100)" disabled>
+    </div>
+    <button id="submit-vote" onclick="submitVote()" disabled>Soumettre</button>
+</div>
+{% endblock %}
+
+<script>
+    let latencyTimer = 10;
+    let timer = 30;
+    let selectedVote = null;
+    const latencyTimerElement = document.getElementById('latency-timer');
+    const timerElement = document.getElementById('timer');
+    const choices = document.querySelectorAll('#choices img');
+    const submitButton = document.getElementById('submit-vote');
+
+    const latencyInterval = setInterval(() => {
+        latencyTimer--;
+        latencyTimerElement.textContent = latencyTimer;
+        if (latencyTimer === 0) {
+            clearInterval(latencyInterval);
+            startVoteTimer();
+        }
+    }, 1000);
+
+    function startVoteTimer() {
+        latencyTimerElement.style.display = 'none';
+        timerElement.style.display = 'block';
+        choices.forEach(choice => choice.removeAttribute('disabled'));
+        submitButton.removeAttribute('disabled');
+
+        const voteInterval = setInterval(() => {
+            timer--;
+            timerElement.textContent = timer;
+            if (timer === 0) {
+                clearInterval(voteInterval);
+                submitVote();
+            }
+        }, 1000);
+    }
+
+    function selectVote(vote) {
+        selectedVote = vote;
+    }
+
+    function submitVote() {
+        socket.emit('vote', { vote: selectedVote });
+        clearInterval(latencyInterval);
+        clearInterval(voteInterval);
+        // Reset timers and selected vote for the next player
+        latencyTimer = 10;
+        timer = 30;
+        selectedVote = null;
+        latencyTimerElement.textContent = latencyTimer;
+        timerElement.textContent = timer;
+        latencyTimerElement.style.display = 'block';
+        timerElement.style.display = 'none';
+        choices.forEach(choice => choice.setAttribute('disabled', 'true'));
+        submitButton.setAttribute('disabled', 'true');
+        setInterval(() => {
+            latencyTimer--;
+            latencyTimerElement.textContent = latencyTimer;
+            if (latencyTimer === 0) {
+                clearInterval(latencyInterval);
+                startVoteTimer();
+            }
+        }, 1000);
+    }
+</script>
