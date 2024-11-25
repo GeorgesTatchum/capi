@@ -1,5 +1,6 @@
 from app.backlog import load_backlog, save_backlog
 from app.game import start_game
+from app.helper import load_file
 from app.main import sio
 from app.models import Config
 from fastapi import APIRouter, Form, Request
@@ -8,6 +9,14 @@ from fastapi.templating import Jinja2Templates
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+
+
+@router.post("/players", response_class=HTMLResponse)
+async def players(request: Request, player_name: str = Form(...)):
+    players = load_file("/static/players.json")
+    return templates.TemplateResponse(
+        "players.html", {"request": request, "num_players": num_players}
+    )
 
 
 @router.post("/setup", response_class=HTMLResponse)
