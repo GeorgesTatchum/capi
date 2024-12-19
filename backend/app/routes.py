@@ -45,7 +45,11 @@ async def vote(vote: Vote):
     backlog = load_backlog()
     for task in backlog["backlog"]:
         if task["id"] == vote.task_id:
-            task.setdefault("votes", []).append(vote.estimate)
+            if "votes" not in task:
+                task["votes"] = {}
+            if vote.player in task["votes"]:
+                return {"error": "Ce joueur a déjà voté pour cette tâche"}
+            task["votes"][vote.player] = vote.estimate
             save_backlog(backlog)
             return {"message": "Vote enregistré"}
     return {"error": "Tâche introuvable"}
