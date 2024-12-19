@@ -7,27 +7,17 @@
             "title": "Cr\u00e9er une interface utilisateur de base",
             "description": "D\u00e9velopper une interface utilisateur simple pour le planning poker avec des zones pour le backlog et les cartes",
             "estimatedPoints": null,
-            "votes": [
-                3,
-                1,
-                8,
-                0,
-                3,
-                2,
-                13,
-                100,
-                3,
-                1
-            ]
+            "votes": {
+                "vlrjnvon": 2,
+                " vorvo": 2,
+                " frofz": 5
+            }
         },
         {
             "id": "US002",
             "title": "Impl\u00e9menter la fonctionnalit\u00e9 de cr\u00e9ation de salle",
             "description": "Permettre aux utilisateurs de cr\u00e9er une nouvelle salle de planning poker",
-            "estimatedPoints": null,
-            "votes": [
-                13
-            ]
+            "estimatedPoints": null
         },
         {
             "id": "US003",
@@ -39,10 +29,7 @@
             "id": "US004",
             "title": "Int\u00e9grer l'authentification des utilisateurs",
             "description": "Mettre en place un syst\u00e8me d'authentification pour s\u00e9curiser l'acc\u00e8s \u00e0 l'application",
-            "estimatedPoints": null,
-            "votes": [
-                8
-            ]
+            "estimatedPoints": null
         },
         {
             "id": "US005",
@@ -54,11 +41,7 @@
             "id": "US006",
             "title": "Impl\u00e9menter la gestion du backlog",
             "description": "Permettre aux utilisateurs d'ajouter, modifier et supprimer des \u00e9l\u00e9ments du backlog",
-            "estimatedPoints": null,
-            "votes": [
-                2,
-                3
-            ]
+            "estimatedPoints": null
         },
         {
             "id": "US007",
@@ -70,10 +53,7 @@
             "id": "US008",
             "title": "Optimiser pour les appareils mobiles",
             "description": "Rendre l'application responsive pour une utilisation sur smartphones et tablettes",
-            "estimatedPoints": null,
-            "votes": [
-                3
-            ]
+            "estimatedPoints": null
         }
     ]
 }

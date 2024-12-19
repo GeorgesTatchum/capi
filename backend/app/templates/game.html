@@ -9,20 +9,14 @@
     <label for="task-select">Choisissez une tâche :</label>
     <select id="task-select" onchange="updateTaskDetails()">
         <option value="" disabled selected>-- Sélectionnez une tâche --</option>
-        {% for task in backlog %}
-            <option value="{{ task['id'] }}" 
-                    data-description="{{ task['description'] }}" 
-                    data-estimate="{{ task['estimatedPoints'] }}">
-                {{ task['id'] }} - {{ task['title'] }}
-            </option>
-        {% endfor %}
     </select>
 
     <!-- Détails de la tâche -->
     <div id="task-details" style="margin-top: 20px;">
         <p><strong>Description :</strong> <span id="task-description">---</span></p>
         <p><strong>Estimation :</strong> <span id="task-estimate">---</span></p>
-        <p><strong>Votes :</strong> <span id="existing-votes">---</span></p>
+        <p><strong>Votes existants :</strong></p>
+        <div id="existing-votes">---</div>
     </div>
 </div>
 
@@ -44,7 +38,6 @@
     <h3>Vote en cours</h3>
     <p>Joueur : <strong id="current-player">---</strong></p>
     <p>Temps restant : <span id="timer">15</span> secondes</p>
-    <button id="submit-vote" onclick="submitVote()" disabled>Soumettre</button>
 
     <div id="choices">
         <img src="static/cartes/cartes_0.svg" alt="0" onclick="selectVote(0)" >
@@ -58,6 +51,7 @@
         <img src="/static/cartes/cartes_40.svg" alt="40" onclick="selectVote(40)" >
         <img src="/static/cartes/cartes_100.svg" alt="100" onclick="selectVote(100)">
     </div>
+    <button id="submit-vote" onclick="submitVote()" disabled>Soumettre</button>
 </div>
 
 <!-- Validation -->
@@ -72,28 +66,76 @@
     let selectedVote = null;
     let timer = 15;
     let interval;
+    let backlogData = {};
+
+    async function refreshBacklog() {
+        const response = await fetch("/backlog");
+        if (response.ok) {
+            const data = await response.json();
+            backlogData = data.backlog;
+            updateBacklogUI(backlogData);
+        } else {
+            console.error("Erreur lors de la récupération du backlog mis à jour");
+        }
+    }
+
+    function updateBacklogUI(backlog) {
+        const select = document.getElementById("task-select");
+        select.innerHTML = '<option value="" disabled selected>-- Sélectionnez une tâche --</option>';
+        
+        backlog.forEach(task => {
+            const option = document.createElement("option");
+            option.value = task.id;
+            option.textContent = `${task.id} - ${task.title}`;
+            option.setAttribute("data-description", task.description);
+            option.setAttribute("data-estimate", task.estimatedPoints);
+            select.appendChild(option);
+        });
+
+        updateTaskDetails();
+    }
 
     function updateTaskDetails() {
         const select = document.getElementById("task-select");
         const selectedOption = select.options[select.selectedIndex];
-        document.getElementById("task-description").textContent = selectedOption.getAttribute("data-description");
-        document.getElementById("task-estimate").textContent = selectedOption.getAttribute("data-estimate");
-        selectedTaskId = selectedOption.value;
+        if (selectedOption) {
+            document.getElementById("task-description").textContent = selectedOption.getAttribute("data-description");
+            document.getElementById("task-estimate").textContent = selectedOption.getAttribute("data-estimate");
+            selectedTaskId = selectedOption.value;
 
-        // Afficher les votes existants
-        const votes = JSON.parse(selectedOption.getAttribute("data-votes") || "[]");
-        const votesDisplay = document.getElementById("existing-votes");
-        votesDisplay.innerHTML = votes.length > 0 
-            ? `Votes existants : ${votes.join(", ")}` 
-            : "Aucun vote pour le moment";
+            // Afficher les votes existants
+            const task = backlogData.find(t => t.id === selectedTaskId);
+            const votesDisplay = document.getElementById("existing-votes");
+            if (task && task.votes) {
+                const votesList = Object.entries(task.votes).map(([player, estimate]) => `${player}: ${estimate}`);
+                votesDisplay.innerHTML = votesList.join("<br>");
+            } else {
+                votesDisplay.innerHTML = "Aucun vote pour le moment";
+            }
+        } else {
+            document.getElementById("task-description").textContent = "---";
+            document.getElementById("task-estimate").textContent = "---";
+            document.getElementById("existing-votes").innerHTML = "---";
+            selectedTaskId = null;
+        }
     }
 
-    function startVote() {
+    function hasPlayerVoted(taskId, player) {
+        const task = backlogData.find(t => t.id === taskId);
+        return task && task.votes && task.votes.hasOwnProperty(player);
+    }
+
+    async function startVote() {
         const playerSelect = document.getElementById("player-select");
         selectedPlayer = playerSelect.value;
 
         if (!selectedTaskId || !selectedPlayer) {
             alert("Veuillez sélectionner une tâche et un joueur !");
+            return;
+        }
+
+        if (hasPlayerVoted(selectedTaskId, selectedPlayer)) {
+            alert("Ce joueur a déjà voté pour cette tâche !");
             return;
         }
 
@@ -122,6 +164,12 @@
     async function submitVote() {
         clearInterval(interval);
 
+        if (hasPlayerVoted(selectedTaskId, selectedPlayer)) {
+            alert("Ce joueur a déjà voté pour cette tâche !");
+            document.getElementById("vote-section").style.display = "none";
+            return;
+        }
+
         const response = await fetch("/vote", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -137,42 +185,19 @@
             document.getElementById("vote-section").style.display = "none";
             selectedVote = null;
             document.getElementById("submit-vote").disabled = true;
-            await refreshBacklog(); // Ajoutez cette ligne
+            await refreshBacklog();
         } else {
-            alert("Erreur lors de l'enregistrement du vote.");
+            const errorData = await response.json();
+            alert(errorData.error || "Erreur lors de l'enregistrement du vote.");
         }
-    }
-
-    async function refreshBacklog() {
-        const response = await fetch("/backlog");
-        if (response.ok) {
-            const data = await response.json();
-            updateBacklogUI(data.backlog);
-        } else {
-            console.error("Erreur lors de la récupération du backlog mis à jour");
-        }
-    }
-
-    function updateBacklogUI(backlog) {
-        const select = document.getElementById("task-select");
-        select.innerHTML = '<option value="" disabled selected>-- Sélectionnez une tâche --</option>';
-        
-        backlog.forEach(task => {
-            const option = document.createElement("option");
-            option.value = task.id;
-            option.textContent = `${task.id} - ${task.title}`;
-            option.setAttribute("data-description", task.description);
-            option.setAttribute("data-estimate", task.estimatedPoints);
-            option.setAttribute("data-votes", JSON.stringify(task.votes || []));
-            select.appendChild(option);
-        });
-
-        updateTaskDetails();
     }
 
     function validateVotes() {
         alert("Votes validés pour la tâche actuelle !");
         document.getElementById("validate-section").style.display = "none";
     }
+
+    // Appelez refreshBacklog au chargement de la page
+    document.addEventListener('DOMContentLoaded', refreshBacklog);
 </script>
 {% endblock %}
