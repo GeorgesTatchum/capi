@@ -7,3 +7,9 @@ class Config(BaseModel):
     num_players: int
     player_names: List[str]
     rule: str
+
+
+class Vote(BaseModel):
+    task_id: str
+    player: str
+    estimate: int

@@ -1,53 +1,66 @@
+from typing import Annotated
+
 from app.backlog import load_backlog, save_backlog
-from app.game import start_game
-from app.helper import load_file
-from app.main import sio
-from app.models import Config
+from app.config import templates
+from app.models import Config, Vote
+from app.rules import apply_rule
 from fastapi import APIRouter, Form, Request
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, JSONResponse
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
-
-
-@router.post("/players", response_class=HTMLResponse)
-async def players(request: Request, player_name: str = Form(...)):
-    players = load_file("/static/players.json")
-    return templates.TemplateResponse(
-        "players.html", {"request": request, "num_players": num_players}
-    )
 
 
 @router.post("/setup", response_class=HTMLResponse)
 async def setup(
     request: Request,
-    num_players: int = Form(...),
-    player_names: str = Form(...),
-    rule: str = Form(...),
+    num_players: Annotated[int, Form(...)],
+    player_names: Annotated[str, Form(...)],
+    rule: Annotated[str, Form(...)],
 ):
     config = Config(
         num_players=num_players, player_names=player_names.split(","), rule=rule
     )
     backlog = load_backlog()
-    result = start_game(config, backlog)
-    save_backlog(result)
+    print(f"the backlog is {backlog['backlog']}")
     return templates.TemplateResponse(
-        "game.html", {"request": request, "backlog": result}
+        "game.html",
+        {
+            "request": request,
+            "backlog": backlog["backlog"],
+            "rule": rule,
+            "players": config.player_names,
+        },
     )
 
 
-@sio.on("vote")
-async def handle_vote(sid, data):
-    # Handle vote logic here
-    pass
+@router.get("/backlog", response_class=JSONResponse)
+async def get_backlog():
+    backlog = load_backlog()
+    return {"backlog": backlog["backlog"]}
 
 
-@sio.on("connect")
-async def handle_connect(sid, environ):
-    print("Client connected:", sid)
+# Endpoint pour voter
+@router.post("/vote", response_class=JSONResponse)
+async def vote(vote: Vote):
+    backlog = load_backlog()
+    for task in backlog["backlog"]:
+        if task["id"] == vote.task_id:
+            task.setdefault("votes", []).append(vote.estimate)
+            save_backlog(backlog)
+            return {"message": "Vote enregistré"}
+    return {"error": "Tâche introuvable"}
 
 
-@sio.on("disconnect")
-async def handle_disconnect(sid):
-    print("Client disconnected:", sid)
+# Endpoint pour valider les votes
+@router.post("/validate", response_class=JSONResponse)
+async def validate(task_id: str, rule: str):
+    backlog = load_backlog()
+    for task in backlog["backlog"]:
+        if task["id"] == task_id:
+            votes = task.get("votes", [])
+            result = apply_rule(rule, votes)
+            task["validated"] = result["validated"]
+            task["estimate"] = result["estimate"]
+            save_backlog(backlog)
+            return result
+    return {"error": "Tâche introuvable"}

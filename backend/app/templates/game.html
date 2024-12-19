@@ -2,62 +2,113 @@
 
 {% block content %}
 <h2>Game</h2>
+
+<!-- Sélection de la tâche -->
 <div id="backlog">
-    {% for task in backlog %}
-    <div>
-        <p>Task: {{ task.name }}, Estimate: {{ task.estimate }}</p>
+    <h3>Backlog</h3>
+    <label for="task-select">Choisissez une tâche :</label>
+    <select id="task-select" onchange="updateTaskDetails()">
+        <option value="" disabled selected>-- Sélectionnez une tâche --</option>
+        {% for task in backlog %}
+            <option value="{{ task['id'] }}" 
+                    data-description="{{ task['description'] }}" 
+                    data-estimate="{{ task['estimatedPoints'] }}">
+                {{ task['id'] }} - {{ task['title'] }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <!-- Détails de la tâche -->
+    <div id="task-details" style="margin-top: 20px;">
+        <p><strong>Description :</strong> <span id="task-description">---</span></p>
+        <p><strong>Estimation :</strong> <span id="task-estimate">---</span></p>
+        <p><strong>Votes :</strong> <span id="existing-votes">---</span></p>
     </div>
-    {% endfor %}
 </div>
-<div id="vote">
-    <h3>Votez pour la tâche actuelle</h3>
-    <div id="latency-timer">10</div>
-    <div id="timer" style="display:none;">30</div>
-    <div id="choices">
-        <img src="/static/cartes/cartes_0.svg" alt="0" onclick="selectVote(0)" disabled>
-        <img src="/static/cartes/cartes_1.svg" alt="1" onclick="selectVote(1)" disabled>
-        <img src="/static/cartes/cartes_2.svg" alt="2" onclick="selectVote(2)" disabled>
-        <img src="/static/cartes/cartes_3.svg" alt="3" onclick="selectVote(3)" disabled>
-        <img src="/static/cartes/cartes_5.svg" alt="5" onclick="selectVote(5)" disabled>
-        <img src="/static/cartes/cartes_8.svg" alt="8" onclick="selectVote(8)" disabled>
-        <img src="/static/cartes/cartes_13.svg" alt="13" onclick="selectVote(13)" disabled>
-        <img src="/static/cartes/cartes_20.svg" alt="20" onclick="selectVote(20)" disabled>
-        <img src="/static/cartes/cartes_40.svg" alt="40" onclick="selectVote(40)" disabled>
-        <img src="/static/cartes/cartes_100.svg" alt="100" onclick="selectVote(100)" disabled>
-    </div>
+
+<!-- Sélection du joueur -->
+<div id="player-section">
+    <h3>Joueur actuel</h3>
+    <label for="player-select">Sélectionnez un joueur :</label>
+    <select id="player-select">
+        <option value="" disabled selected>-- Sélectionnez un joueur --</option>
+        {% for player in players %}
+            <option value="{{ player }}">{{ player }}</option>
+        {% endfor %}
+    </select>
+    <button onclick="startVote()">Démarrer le vote</button>
+</div>
+
+<!-- Section de vote -->
+<div id="vote-section" style="display:none;">
+    <h3>Vote en cours</h3>
+    <p>Joueur : <strong id="current-player">---</strong></p>
+    <p>Temps restant : <span id="timer">15</span> secondes</p>
     <button id="submit-vote" onclick="submitVote()" disabled>Soumettre</button>
+
+    <div id="choices">
+        <img src="static/cartes/cartes_0.svg" alt="0" onclick="selectVote(0)" >
+        <img src="/static/cartes/cartes_1.svg" alt="1" onclick="selectVote(1)" >
+        <img src="/static/cartes/cartes_2.svg" alt="2" onclick="selectVote(2)" >
+        <img src="/static/cartes/cartes_3.svg" alt="3" onclick="selectVote(3)" >
+        <img src="/static/cartes/cartes_5.svg" alt="5" onclick="selectVote(5)" >
+        <img src="/static/cartes/cartes_8.svg" alt="8" onclick="selectVote(8)" >
+        <img src="/static/cartes/cartes_13.svg" alt="13" onclick="selectVote(13)" >
+        <img src="/static/cartes/cartes_20.svg" alt="20" onclick="selectVote(20)" >
+        <img src="/static/cartes/cartes_40.svg" alt="40" onclick="selectVote(40)" >
+        <img src="/static/cartes/cartes_100.svg" alt="100" onclick="selectVote(100)">
+    </div>
 </div>
-{% endblock %}
+
+<!-- Validation -->
+<div id="validate-section" style="display:none;">
+    <h3>Tous les joueurs ont voté !</h3>
+    <button onclick="validateVotes()">Valider les votes</button>
+</div>
 
 <script>
-    let latencyTimer = 10;
-    let timer = 30;
+    let selectedTaskId = null;
+    let selectedPlayer = null;
     let selectedVote = null;
-    const latencyTimerElement = document.getElementById('latency-timer');
-    const timerElement = document.getElementById('timer');
-    const choices = document.querySelectorAll('#choices img');
-    const submitButton = document.getElementById('submit-vote');
+    let timer = 15;
+    let interval;
 
-    const latencyInterval = setInterval(() => {
-        latencyTimer--;
-        latencyTimerElement.textContent = latencyTimer;
-        if (latencyTimer === 0) {
-            clearInterval(latencyInterval);
-            startVoteTimer();
+    function updateTaskDetails() {
+        const select = document.getElementById("task-select");
+        const selectedOption = select.options[select.selectedIndex];
+        document.getElementById("task-description").textContent = selectedOption.getAttribute("data-description");
+        document.getElementById("task-estimate").textContent = selectedOption.getAttribute("data-estimate");
+        selectedTaskId = selectedOption.value;
+
+        // Afficher les votes existants
+        const votes = JSON.parse(selectedOption.getAttribute("data-votes") || "[]");
+        const votesDisplay = document.getElementById("existing-votes");
+        votesDisplay.innerHTML = votes.length > 0 
+            ? `Votes existants : ${votes.join(", ")}` 
+            : "Aucun vote pour le moment";
+    }
+
+    function startVote() {
+        const playerSelect = document.getElementById("player-select");
+        selectedPlayer = playerSelect.value;
+
+        if (!selectedTaskId || !selectedPlayer) {
+            alert("Veuillez sélectionner une tâche et un joueur !");
+            return;
         }
-    }, 1000);
 
-    function startVoteTimer() {
-        latencyTimerElement.style.display = 'none';
-        timerElement.style.display = 'block';
-        choices.forEach(choice => choice.removeAttribute('disabled'));
-        submitButton.removeAttribute('disabled');
+        document.getElementById("current-player").textContent = selectedPlayer;
+        document.getElementById("vote-section").style.display = "block";
+        startTimer();
+    }
 
-        const voteInterval = setInterval(() => {
+    function startTimer() {
+        timer = 15;
+        document.getElementById("timer").textContent = timer;
+        interval = setInterval(() => {
             timer--;
-            timerElement.textContent = timer;
+            document.getElementById("timer").textContent = timer;
             if (timer === 0) {
-                clearInterval(voteInterval);
                 submitVote();
             }
         }, 1000);
@@ -65,29 +116,63 @@
 
     function selectVote(vote) {
         selectedVote = vote;
+        document.getElementById("submit-vote").disabled = false;
     }
 
-    function submitVote() {
-        socket.emit('vote', { vote: selectedVote });
-        clearInterval(latencyInterval);
-        clearInterval(voteInterval);
-        // Reset timers and selected vote for the next player
-        latencyTimer = 10;
-        timer = 30;
-        selectedVote = null;
-        latencyTimerElement.textContent = latencyTimer;
-        timerElement.textContent = timer;
-        latencyTimerElement.style.display = 'block';
-        timerElement.style.display = 'none';
-        choices.forEach(choice => choice.setAttribute('disabled', 'true'));
-        submitButton.setAttribute('disabled', 'true');
-        setInterval(() => {
-            latencyTimer--;
-            latencyTimerElement.textContent = latencyTimer;
-            if (latencyTimer === 0) {
-                clearInterval(latencyInterval);
-                startVoteTimer();
-            }
-        }, 1000);
+    async function submitVote() {
+        clearInterval(interval);
+
+        const response = await fetch("/vote", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                task_id: selectedTaskId,
+                player: selectedPlayer,
+                estimate: selectedVote
+            })
+        });
+
+        if (response.ok) {
+            alert("Vote enregistré !");
+            document.getElementById("vote-section").style.display = "none";
+            selectedVote = null;
+            document.getElementById("submit-vote").disabled = true;
+            await refreshBacklog(); // Ajoutez cette ligne
+        } else {
+            alert("Erreur lors de l'enregistrement du vote.");
+        }
+    }
+
+    async function refreshBacklog() {
+        const response = await fetch("/backlog");
+        if (response.ok) {
+            const data = await response.json();
+            updateBacklogUI(data.backlog);
+        } else {
+            console.error("Erreur lors de la récupération du backlog mis à jour");
+        }
+    }
+
+    function updateBacklogUI(backlog) {
+        const select = document.getElementById("task-select");
+        select.innerHTML = '<option value="" disabled selected>-- Sélectionnez une tâche --</option>';
+        
+        backlog.forEach(task => {
+            const option = document.createElement("option");
+            option.value = task.id;
+            option.textContent = `${task.id} - ${task.title}`;
+            option.setAttribute("data-description", task.description);
+            option.setAttribute("data-estimate", task.estimatedPoints);
+            option.setAttribute("data-votes", JSON.stringify(task.votes || []));
+            select.appendChild(option);
+        });
+
+        updateTaskDetails();
+    }
+
+    function validateVotes() {
+        alert("Votes validés pour la tâche actuelle !");
+        document.getElementById("validate-section").style.display = "none";
     }
 </script>
+{% endblock %}
