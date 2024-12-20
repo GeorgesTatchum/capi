@@ -5,7 +5,10 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi_socketio import SocketManager
 
-app = FastAPI()
+app = FastAPI(
+    title="Planning Poker API",
+    description="API pour gérer une partie de Planning Poker.",
+)
 sio = SocketManager(app=app)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")

@@ -2,37 +2,50 @@
 
 {% block content %}
 <h1>Planning Poker</h1>
+<h2>Menu de démarrage</h2>
 <div id="setup">
-    <h2>Setup</h2>
     <form id="setup-form" method="post" action="/setup">
         <label for="num_players">Nombre de joueurs:</label>
-        <input type="number" id="num_players" name="num_players" required>
+        <input type="number" id="num_players" name="num_players" required min="2">
         
         <label for="player_names">Pseudos des joueurs (séparés par des virgules):</label>
         <input type="text" id="player_names" name="player_names" required>
         
         <label for="rule">Règles:</label>
-        <select id="rule" name="rule">
-            <option value="Strict">Strict</option>
+        <select id="rule" name="rule" required>
+            <!-- <option value="Strict">Strict</option>
             <option value="Moyenne">Moyenne</option>
-            <option value="Médiane">Médiane</option>
-            <option value="Majorité absolue">Majorité absolue</option>
-            <option value="Majorité relative">Majorité relative</option>
+            <option value="Médiane">Médiane</option> -->
+            <option value="Majorite absolue">Majorité absolue</option>
+            <option value="Majorite relative">Majorité relative</option>
         </select>
         <button type="submit">Démarrer</button>
     </form>
 </div>
-{% endblock %}
 
-<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 <script>
-    const socket = io();
-
-    socket.on('connect', () => {
-        console.log('Connected to server');
+    document.getElementById('setup-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        var numPlayers = parseInt(document.getElementById('num_players').value);
+        var playerNames = document.getElementById('player_names').value.split(',').map(name => name.trim());
+        
+        if (numPlayers < 2) {
+            alert('Il faut au minimum 2 joueurs.');
+            return;
+        }
+        
+        if (playerNames.length !== numPlayers) {
+            alert('Le nombre de pseudos doit correspondre au nombre de joueurs sélectionné.');
+            return;
+        }
+        
+        if (new Set(playerNames).size !== playerNames.length) {
+            alert('Tous les pseudos doivent être uniques.');
+            return;
+        }
+        
+        this.submit();
     });
-
-    socket.on('disconnect', () => {
-        console.log('Disconnected from server');
-    });
-</script>
+    </script>
+{% endblock %}

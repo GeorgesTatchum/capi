@@ -2,6 +2,7 @@
 
 {% block content %}
 <h2>Game</h2>
+<p><strong>Règle de validation :</strong> <span id="current-rule">{{ rule }}</span></p>
 
 <!-- Sélection de la tâche -->
 <div id="backlog">
@@ -17,6 +18,7 @@
         <p><strong>Estimation :</strong> <span id="task-estimate">---</span></p>
         <p><strong>Votes existants :</strong></p>
         <div id="existing-votes">---</div>
+        <button id="validate-task" style="display: none;" onclick="validateTask()">Valider la tâche</button>
     </div>
 </div>
 
@@ -30,34 +32,23 @@
             <option value="{{ player }}">{{ player }}</option>
         {% endfor %}
     </select>
-    <button onclick="startVote()">Démarrer le vote</button>
+    <button id="start-vote" onclick="startVote()">Démarrer le vote</button>
 </div>
 
 <!-- Section de vote -->
-<div id="vote-section" style="display:none;">
+<div id="vote-section" style="display: none; max-width: 960px;">
     <h3>Vote en cours</h3>
+    <button id="submit-vote" onclick="submitVote()" disabled>Soumettre</button>
     <p>Joueur : <strong id="current-player">---</strong></p>
     <p>Temps restant : <span id="timer">15</span> secondes</p>
-
     <div id="choices">
-        <img src="static/cartes/cartes_0.svg" alt="0" onclick="selectVote(0)" >
-        <img src="/static/cartes/cartes_1.svg" alt="1" onclick="selectVote(1)" >
-        <img src="/static/cartes/cartes_2.svg" alt="2" onclick="selectVote(2)" >
-        <img src="/static/cartes/cartes_3.svg" alt="3" onclick="selectVote(3)" >
-        <img src="/static/cartes/cartes_5.svg" alt="5" onclick="selectVote(5)" >
-        <img src="/static/cartes/cartes_8.svg" alt="8" onclick="selectVote(8)" >
-        <img src="/static/cartes/cartes_13.svg" alt="13" onclick="selectVote(13)" >
-        <img src="/static/cartes/cartes_20.svg" alt="20" onclick="selectVote(20)" >
-        <img src="/static/cartes/cartes_40.svg" alt="40" onclick="selectVote(40)" >
-        <img src="/static/cartes/cartes_100.svg" alt="100" onclick="selectVote(100)">
+        <img src="static/cartes/cartes_interro.svg" alt="-1" onclick="selectVote(-1)" >
+        {% for value in [0, 1, 2, 3, 5, 8, 13, 20, 40, 100] %}
+            <img src="static/cartes/cartes_{{ value }}.svg" alt="{{ value }}" onclick="selectVote({{ value }})">
+        {% endfor %}
+        <img src="static/cartes/cartes_cafe.svg" alt="-1" onclick="selectVote(-2)" >
     </div>
-    <button id="submit-vote" onclick="submitVote()" disabled>Soumettre</button>
-</div>
-
-<!-- Validation -->
-<div id="validate-section" style="display:none;">
-    <h3>Tous les joueurs ont voté !</h3>
-    <button onclick="validateVotes()">Valider les votes</button>
+    
 </div>
 
 <script>
@@ -66,7 +57,9 @@
     let selectedVote = null;
     let timer = 15;
     let interval;
-    let backlogData = {};
+    let backlogData = [];
+    let playersData = {{ players|tojson }};
+    let currentRule = document.getElementById("current-rule").textContent;
 
     async function refreshBacklog() {
         const response = await fetch("/backlog");
@@ -97,25 +90,39 @@
 
     function updateTaskDetails() {
         const select = document.getElementById("task-select");
+        const playerSection = document.getElementById("player-section");
         const selectedOption = select.options[select.selectedIndex];
         if (selectedOption) {
             document.getElementById("task-description").textContent = selectedOption.getAttribute("data-description");
-            document.getElementById("task-estimate").textContent = selectedOption.getAttribute("data-estimate");
+            document.getElementById("task-estimate").textContent = selectedOption.getAttribute("data-estimate") || "Non estimé";
             selectedTaskId = selectedOption.value;
-
-            // Afficher les votes existants
+            console.log(selectedTaskId);
+            
             const task = backlogData.find(t => t.id === selectedTaskId);
+            console.log(task);
+            
             const votesDisplay = document.getElementById("existing-votes");
+            const validateButton = document.getElementById("validate-task");
+            if (task.validated === true) {
+                playerSection.style.display = "none";
+            } else {
+                playerSection.style.display = "block";
+            }
             if (task && task.votes) {
                 const votesList = Object.entries(task.votes).map(([player, estimate]) => `${player}: ${estimate}`);
                 votesDisplay.innerHTML = votesList.join("<br>");
+                
+                const allPlayersVoted = playersData.every(player => task.votes.hasOwnProperty(player));
+                validateButton.style.display = allPlayersVoted && task.validated !== true ? "block" : "none";
             } else {
                 votesDisplay.innerHTML = "Aucun vote pour le moment";
+                validateButton.style.display = "none";
             }
         } else {
             document.getElementById("task-description").textContent = "---";
             document.getElementById("task-estimate").textContent = "---";
             document.getElementById("existing-votes").innerHTML = "---";
+            document.getElementById("validate-task").style.display = "none";
             selectedTaskId = null;
         }
     }
@@ -192,12 +199,35 @@
         }
     }
 
-    function validateVotes() {
-        alert("Votes validés pour la tâche actuelle !");
-        document.getElementById("validate-section").style.display = "none";
+    async function validateTask() {
+        if (!selectedTaskId) {
+            alert("Veuillez sélectionner une tâche à valider.");
+            return;
+        }
+        
+        const response = await fetch("/validate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                task_id: selectedTaskId,
+                rule: currentRule
+            })
+        });
+        
+
+        if (response.ok) {
+            const result = await response.json();
+            alert(`Tâche validée ! Estimation finale : ${result.estimate}`);
+            await refreshBacklog();
+        } else {
+            const errorData = await response.json();
+            console.log(errorData);
+            
+            alert(errorData.error || "Erreur lors de la validation de la tâche.");
+        }
     }
 
-    // Appelez refreshBacklog au chargement de la page
+    // Initialisation
     document.addEventListener('DOMContentLoaded', refreshBacklog);
 </script>
 {% endblock %}
