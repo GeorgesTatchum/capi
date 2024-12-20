@@ -48,9 +48,9 @@ Le frontend utilise des templates Jinja2 et est servi par le backend FastAPI. Au
 
 1. Accéder à l'application via votre navigateur à l'adresse `http://localhost:8000`.
 2. Configurer le nombre de joueurs, leurs pseudos et les règles de jeu.
-3. Entrer le backlog des fonctionnalités.
+3. Entrer le backlog des fonctionnalités. [X = un backlog à entré statiquement dans le dossier backend/]
 4. Commencer la session de planning poker et voter pour chaque fonctionnalité.
-5. Sauvegarder l'état d'avancement si nécessaire.
+5. Sauvegarder automatiquement l'état d'avancement.
 
 ## Tests
 
