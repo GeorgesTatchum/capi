@@ -204,6 +204,7 @@
             alert("Veuillez sélectionner une tâche à valider.");
             return;
         }
+        console.log(currentRule, selectedTaskId);
         
         const response = await fetch("/validate", {
             method: "POST",
@@ -213,6 +214,8 @@
                 rule: currentRule
             })
         });
+        
+        console.log(response);
         
 
         if (response.ok) {

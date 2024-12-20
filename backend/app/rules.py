@@ -1,11 +1,17 @@
 from statistics import mean, median
 
 
-def apply_rule(rule: str, votes: list):
-    if rule == "majorite absolue":
+def apply_rule(votes: list, rule: str = "strict"):
+    if rule == "maj_absolue":
         return absolute_majority_rule(votes)
-    elif rule == "majorite relative":
+    elif rule == "maj_relative":
         return relative_majority_rule(votes)
+    elif rule == "strict":
+        return strict_rule(votes)
+    elif rule == "mediane":
+        return median_rule(votes)
+    elif rule == "moyenne":
+        return average_rule(votes)
     else:
         raise ValueError("règle inconnue")
 
@@ -47,3 +53,8 @@ def relative_majority_rule(votes):
 def median_rule(votes):
     med = median(votes)
     return {"validated": True, "estimate": med}
+
+
+def average_rule(votes):
+    avg = round(mean(votes))
+    return {"validated": True, "estimate": avg}

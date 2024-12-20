@@ -61,7 +61,15 @@ async def validate(task_id: str = Body(...), rule: str = Body(...)):
     for task in backlog.backlog:
         if task.id == task_id and not task.validated:
             votes = list(task.votes.values())
-            result = apply_rule(rule.lower(), votes)
+            # au cas où on n'est pas au second tour, on utilise la règle stricte
+            if (rule != "strict" and task.step == 0) or rule == "strict":
+                result = apply_rule(votes)
+            else:
+                result = apply_rule(votes, rule)
+
+            if result["validated"] == False:
+                task.votes = {}
+
             task.validated = result["validated"]
             task.estimatedPoints = result["estimate"]
             task.step += 1
