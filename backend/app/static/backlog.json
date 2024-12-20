@@ -1,0 +1,82 @@
+{
+    "project": "Planning Poker App",
+    "sprint": "Sprint 1",
+    "backlog": [
+        {
+            "id": "US001",
+            "title": "Cr\u00e9er une interface utilisateur de base",
+            "description": "D\u00e9velopper une interface utilisateur simple pour le planning poker avec des zones pour le backlog et les cartes",
+            "estimatedPoints": 0,
+            "votes": {
+                "pierre": 0,
+                " jacque": 2,
+                " jean": 0
+            },
+            "validated": true,
+            "step": 2
+        },
+        {
+            "id": "US002",
+            "title": "Impl\u00e9menter la fonctionnalit\u00e9 de cr\u00e9ation de salle",
+            "description": "Permettre aux utilisateurs de cr\u00e9er une nouvelle salle de planning poker",
+            "estimatedPoints": null,
+            "votes": {},
+            "validated": false,
+            "step": 1
+        },
+        {
+            "id": "US003",
+            "title": "Ajouter la fonctionnalit\u00e9 de vote",
+            "description": "Permettre aux participants de voter en utilisant les cartes de planning poker",
+            "estimatedPoints": null,
+            "votes": {},
+            "validated": false,
+            "step": 0
+        },
+        {
+            "id": "US004",
+            "title": "Int\u00e9grer l'authentification des utilisateurs",
+            "description": "Mettre en place un syst\u00e8me d'authentification pour s\u00e9curiser l'acc\u00e8s \u00e0 l'application",
+            "estimatedPoints": null,
+            "votes": {},
+            "validated": false,
+            "step": 0
+        },
+        {
+            "id": "US005",
+            "title": "D\u00e9velopper la fonctionnalit\u00e9 de r\u00e9v\u00e9lation des votes",
+            "description": "Cr\u00e9er un m\u00e9canisme pour r\u00e9v\u00e9ler tous les votes simultan\u00e9ment apr\u00e8s que chacun ait vot\u00e9",
+            "estimatedPoints": null,
+            "votes": {},
+            "validated": false,
+            "step": 0
+        },
+        {
+            "id": "US006",
+            "title": "Impl\u00e9menter la gestion du backlog",
+            "description": "Permettre aux utilisateurs d'ajouter, modifier et supprimer des \u00e9l\u00e9ments du backlog",
+            "estimatedPoints": null,
+            "votes": {},
+            "validated": false,
+            "step": 0
+        },
+        {
+            "id": "US007",
+            "title": "Ajouter des statistiques de session",
+            "description": "Cr\u00e9er une page de statistiques montrant les r\u00e9sultats des votes pr\u00e9c\u00e9dents",
+            "estimatedPoints": null,
+            "votes": {},
+            "validated": false,
+            "step": 0
+        },
+        {
+            "id": "US008",
+            "title": "Optimiser pour les appareils mobiles",
+            "description": "Rendre l'application responsive pour une utilisation sur smartphones et tablettes",
+            "estimatedPoints": null,
+            "votes": {},
+            "validated": false,
+            "step": 0
+        }
+    ]
+}
